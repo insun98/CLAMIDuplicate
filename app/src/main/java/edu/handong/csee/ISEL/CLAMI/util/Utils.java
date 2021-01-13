@@ -198,18 +198,25 @@ public class Utils {
 		
 		int numberOfInstances=0;
 		
+		
 		// (2) Generate instances for CLAMI. If there are no instances in the first round with the minimum violation scores,
 		//     then use the next minimum violation score. (Keys are ordered violation scores)
 		Instances newTestInstances = null;
 		for(int i=0; i<keys.length; i++){
 			int qualifiedViolationFrom=instances.numInstances() - (int)keys[i];
 			if((int)keys[keys.length-i-1]>=qualifiedViolationFrom) {
-				String highViolationInstances = metricIdxWithTheSameViolationScores.get(keys[keys.length-i+1]);
-				
-				for(int j = 0; j < highViolationInstances.length(); j++) {
-				    if(highViolationInstances.charAt(j) == ',') numberOfInstances++;
+				String highViolationInstances = metricIdxWithTheSameViolationScores.get(keys[keys.length-i-1]);
+				if(i>1) {
+				for(int k=keys.length-i-1; i<keys.length; k++) {
+						highViolationInstances = highViolationInstances+metricIdxWithTheSameViolationScores.get(keys[k]);
+					}
 				}
-				String selectedMetricIndices = metricIdxWithTheSameViolationScores.get(keys[i]) + metricIdxWithTheSameViolationScores.get(keys[keys.length-i+1])+ (instancesByCLA.classIndex() +1); // violation 값에 해당하는 metric과 class index 
+				
+				
+				for(int j = 0; j <highViolationInstances.length(); j++) {
+				    if(highViolationInstances.charAt(j) == ',') numberOfInstances++;
+				}numberOfInstances+=1;
+				String selectedMetricIndices = metricIdxWithTheSameViolationScores.get(keys[i]) + metricIdxWithTheSameViolationScores.get(keys[keys.length-i-1])+ (instancesByCLA.classIndex() +1); // violation 값에 해당하는 metric과 class index 
 				trainingInstancesByCLAMI = getInstancesByRemovingSpecificAttributes(instancesByCLA,selectedMetricIndices,true); // 각 MVS에 대하여   metric set +  predicted class index set만 남겻다. 
 				newTestInstances = getInstancesByRemovingSpecificAttributes(testInstances,selectedMetricIndices,true); // 각 violation 값에 해당하는 metric 값들과 actual class index값만 남겼다. 
 						
@@ -228,7 +235,8 @@ public class Utils {
 			String instIndicesNeedToRemove = getSelectedInstances(trainingInstancesByCLAMI,0,cutoffsForHigherValuesOfAttribute,positiveLabel); // violation이 있는 instance만 남긴 set 
 			trainingInstancesByCLAMI = getInstancesByRemovingSpecificInstances(trainingInstancesByCLAMI,instIndicesNeedToRemove,false); // violation이 있는 인스턴스만 지우기 위해 false를 보내서 지운다. 그러면 violation 이 없는 최종 값만 남는다. 
 			}
-			if(trainingInstancesByCLAMI.numInstances() != 0)// 만약 최종 인스턴스가 1개 이상 일때 더 이상 violation 값을 확인하지 않고 이 트레이 세트를 사용한다. 
+			if(trainingInstancesByCLAMI.numInstances() != 0)
+				System.out.println(trainingInstancesByCLAMI.numInstances());// 만약 최종 인스턴스가 1개 이상 일때 더 이상 violation 값을 확인하지 않고 이 트레이 세트를 사용한다. 
 				break;
 		}
 		
@@ -245,11 +253,9 @@ public class Utils {
 				for(int instIdx = 0; instIdx < newTestInstances.numInstances(); instIdx++){
 					double predictedLabelIdx = classifier.classifyInstance(newTestInstances.get(instIdx));
 					if(!suppress)
-						for(Object key: keys){
-						System.out.println( key + " "+metricIdxWithTheSameViolationScores.get(key) + (instancesByCLA.classIndex() +1));
-						
+						for(int i=0; i<keys.length; i++){
+							metricIdxWithTheSameViolationScores.get(keys[i]);
 						}
-					
 						System.out.println("CLAMI: Instance " + (instIdx+1) + " predicted as, " + 
 							newTestInstances.classAttribute().value((int)predictedLabelIdx)	+
 							//((newTestInstances.classAttribute().indexOfValue(positiveLabel))==predictedLabelIdx?"buggy":"clean") +
@@ -349,6 +355,7 @@ public class Utils {
 				
 				if (instances.get(instIdx).value(attrIdx) <= cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 작거나 같은데 버기로 레이블 되어 있으면 violation ++
 						&& instances.get(instIdx).classValue() == instances.classAttribute().indexOfValue(positiveLabel)){
+					
 						violations[instIdx]++;
 				}else if(instances.get(instIdx).value(attrIdx) > cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 큰 클린으로 레이블 되어 있으면 violation ++
 						&& instances.get(instIdx).classValue() == instances.classAttribute().indexOfValue(getNegLabel(instances, positiveLabel))){
@@ -363,10 +370,10 @@ public class Utils {
 					if(attrIdx == instances.classIndex())
 						continue; // no need to compute violation score for the class attribute
 					
-					if (instances.get(instIdx).value(attrIdx) <= cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 작거나 같은데 버기로 레이블 되어 있으면 violation ++
+					if (instances.get(instIdx).value(attrIdx) > cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 작거나 같은데 버기로 레이블 되어 있으면 violation ++
 							&& instances.get(instIdx).classValue() == instances.classAttribute().indexOfValue(positiveLabel)){
 							violations[instIdx]++;
-					}else if(instances.get(instIdx).value(attrIdx) > cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 큰 클린으로 레이블 되어 있으면 violation ++
+					}else if(instances.get(instIdx).value(attrIdx) <= cutoffsForHigherValuesOfAttribute[attrIdx] // 각 메트릭 값이 미디언보다 큰 클린으로 레이블 되어 있으면 violation ++
 							&& instances.get(instIdx).classValue() == instances.classAttribute().indexOfValue(getNegLabel(instances, positiveLabel))){
 							violations[instIdx]++;
 					}
