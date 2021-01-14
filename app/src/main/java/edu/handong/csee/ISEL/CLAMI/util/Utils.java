@@ -241,9 +241,11 @@ public class Utils {
 		}
 		
 		// check if there are no instances in any one of two classes.
+		// To check there are at least one buggy and one clean instance.
+		//nominalCounts[0] = buggy개수, vice versa
 		if(trainingInstancesByCLAMI.attributeStats(trainingInstancesByCLAMI.classIndex()).nominalCounts[0]!=0 &&
 				trainingInstancesByCLAMI.attributeStats(trainingInstancesByCLAMI.classIndex()).nominalCounts[1]!=0){
-		
+		System.out.println(trainingInstancesByCLAMI.attributeStats(trainingInstancesByCLAMI.classIndex()).nominalCounts[1]);
 			try {
 				Classifier classifier = (Classifier) weka.core.Utils.forName(Classifier.class, mlAlgorithm, null);
 				classifier.buildClassifier(trainingInstancesByCLAMI);
@@ -253,9 +255,7 @@ public class Utils {
 				for(int instIdx = 0; instIdx < newTestInstances.numInstances(); instIdx++){
 					double predictedLabelIdx = classifier.classifyInstance(newTestInstances.get(instIdx));
 					if(!suppress)
-						for(int i=0; i<keys.length; i++){
-							metricIdxWithTheSameViolationScores.get(keys[i]);
-						}
+
 						System.out.println("CLAMI: Instance " + (instIdx+1) + " predicted as, " + 
 							newTestInstances.classAttribute().value((int)predictedLabelIdx)	+
 							//((newTestInstances.classAttribute().indexOfValue(positiveLabel))==predictedLabelIdx?"buggy":"clean") +
