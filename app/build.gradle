@@ -36,5 +36,5 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'edu.handong.csee.ISEL.CLAMI.App'
+    mainClass = 'edu.handong.csee.ISEL.CLAMI.'
 }
